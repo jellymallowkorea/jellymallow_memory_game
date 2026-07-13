@@ -343,7 +343,7 @@
       <div class="startface">🧦👖</div>
       <div class="flavor">Jelly Mallow Memory</div>
       <h2>같은 그림 맞추기</h2>
-      <p>같은 제품 카드 두 장을 찾아 짝지어보세요.<br>짝을 맞출 때마다 5점, 1초 안에 빠르게 맞추면 콤보 보너스 +3점!<br>모두 맞추면 걸린 시간이 표시돼요.</p>
+      <p>같은 제품 카드 두 장을 찾아 짝지어보세요.<br>짝을 맞출 때마다 5점, 짝 맞추기에 연속 성공하고 그 간격이 1초 이내면 콤보 보너스 +3점!<br>모두 맞추면 걸린 시간이 표시돼요.</p>
       <button class="action" id="startBtn">게임 시작</button>
     </div>
   </div>
@@ -374,8 +374,8 @@ let pairsFound = 0;
 let elapsedTime = 0;
 let timerInterval = null;
 let gameActive = false;
-let firstFlipTime = 0;
 let comboCount = 0;
+let lastMatchTime = null;
 const COMBO_WINDOW_MS = 1000;
 const COMBO_BONUS = 3;
 
@@ -437,7 +437,6 @@ function onCardClick(card){
 
   if(!firstCard){
     firstCard = card;
-    firstFlipTime = Date.now();
     return;
   }
   secondCard = card;
@@ -451,17 +450,18 @@ function checkMatch(){
     firstCard.classList.add('matched');
     secondCard.classList.add('matched');
 
-    const reactionTime = Date.now() - firstFlipTime;
-    const isCombo = reactionTime <= COMBO_WINDOW_MS;
+    const now = Date.now();
+    const isCombo = lastMatchTime !== null && (now - lastMatchTime) <= COMBO_WINDOW_MS;
 
     if(isCombo){
       comboCount += 1;
       score += 5 + COMBO_BONUS;
       showComboToast();
     } else {
-      comboCount = 0;
+      comboCount = 1;
       score += 5;
     }
+    lastMatchTime = now;
 
     pairsFound += 1;
     scoreEl.textContent = score;
@@ -472,6 +472,7 @@ function checkMatch(){
     }
   } else {
     comboCount = 0;
+    lastMatchTime = null;
     firstCard.classList.add('shake','wrong');
     secondCard.classList.add('shake','wrong');
     setTimeout(() => {
@@ -516,9 +517,8 @@ function endGame(){
 function resetGame(){
   score = 0;
   pairsFound = 0;
-  elapsedTime = 0;
   comboCount = 0;
-  scoreEl.textContent = 0;
+  lastMatchTime = null;
   pairsEl.textContent = 0;
   timeEl.textContent = 0;
   firstCard = null;
